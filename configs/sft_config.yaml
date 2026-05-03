@@ -1,0 +1,45 @@
+model:
+  name: microsoft/Phi-3-mini-4k-instruct
+  max_seq_length: 2048
+  load_in_4bit: false        # 24GB VRAM → full LoRA, no quantisation
+  dtype: null                # auto (bfloat16 on Ampere+)
+
+lora:
+  r: 64
+  lora_alpha: 128
+  lora_dropout: 0.0
+  bias: none
+  target_modules:
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj
+    - gate_proj
+    - up_proj
+    - down_proj
+  use_gradient_checkpointing: unsloth
+
+training:
+  output_dir: models/sft-phi3-v1
+  num_train_epochs: 3
+  per_device_train_batch_size: 4
+  per_device_eval_batch_size: 4
+  gradient_accumulation_steps: 4    # effective batch = 16
+  warmup_ratio: 0.05
+  learning_rate: 2.0e-4
+  lr_scheduler_type: cosine
+  logging_steps: 10
+  evaluation_strategy: steps
+  eval_steps: 50
+  save_strategy: steps
+  save_steps: 100
+  save_total_limit: 3
+  load_best_model_at_end: true
+  metric_for_best_model: eval_loss
+  report_to: none
+  seed: 42
+
+data:
+  train_file: data/dataset/sft_train.jsonl
+  eval_file: data/dataset/sft_test.jsonl
+  text_field: text

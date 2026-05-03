@@ -1,0 +1,45 @@
+table: orders
+dataset: ecommerce
+description: Customer purchase orders with line-level amount tracking
+columns:
+  - name: order_id
+    type: STRING
+    description: Unique order identifier (UUID)
+    nullable: false
+  - name: customer_id
+    type: STRING
+    description: Foreign key to customers table
+    nullable: false
+  - name: created_at
+    type: TIMESTAMP
+    description: Order creation timestamp (UTC)
+    nullable: false
+  - name: updated_at
+    type: TIMESTAMP
+    description: Last status update timestamp
+    nullable: true
+  - name: status
+    type: STRING
+    description: Current order status
+    values: [pending, processing, shipped, delivered, cancelled, refunded]
+    nullable: false
+  - name: amount_usd
+    type: FLOAT64
+    description: Total order value in USD
+    nullable: false
+  - name: discount_usd
+    type: FLOAT64
+    description: Applied discount amount in USD
+    nullable: true
+  - name: shipping_country
+    type: STRING
+    description: Destination country ISO-2 code
+    nullable: true
+  - name: items
+    type: ARRAY<STRUCT<sku STRING, qty INT64, unit_price FLOAT64>>
+    description: Line items array with SKU, quantity, and unit price
+    nullable: true
+  - name: tags
+    type: ARRAY<STRING>
+    description: Free-form order tags (e.g. flash_sale, loyalty)
+    nullable: true

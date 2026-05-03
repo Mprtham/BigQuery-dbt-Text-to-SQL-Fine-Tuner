@@ -1,0 +1,46 @@
+table: customers
+dataset: ecommerce
+description: Registered customer profiles
+columns:
+  - name: customer_id
+    type: STRING
+    description: Unique customer identifier (UUID)
+    nullable: false
+  - name: email
+    type: STRING
+    description: Customer email address
+    nullable: false
+  - name: first_name
+    type: STRING
+    description: Customer first name
+    nullable: true
+  - name: last_name
+    type: STRING
+    description: Customer last name
+    nullable: true
+  - name: country
+    type: STRING
+    description: Country of residence ISO-2 code
+    nullable: true
+  - name: created_at
+    type: TIMESTAMP
+    description: Account creation timestamp
+    nullable: false
+  - name: tier
+    type: STRING
+    description: Customer loyalty tier
+    values: [bronze, silver, gold, platinum]
+    nullable: true
+  - name: is_active
+    type: BOOL
+    description: Whether account is active
+    nullable: false
+  - name: lifetime_value_usd
+    type: FLOAT64
+    description: Total historical spend
+    nullable: true
+  - name: acquisition_channel
+    type: STRING
+    description: First-touch acquisition channel
+    values: [organic, paid_search, social, referral, email, direct]
+    nullable: true

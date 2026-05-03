@@ -1,0 +1,47 @@
+table: subscriptions
+dataset: billing
+description: Customer subscription plans and billing cycles
+columns:
+  - name: subscription_id
+    type: STRING
+    description: Unique subscription identifier
+    nullable: false
+  - name: customer_id
+    type: STRING
+    description: Foreign key to customers table
+    nullable: false
+  - name: plan_id
+    type: STRING
+    description: Subscription plan identifier
+    nullable: false
+  - name: plan_name
+    type: STRING
+    description: Human-readable plan name
+    values: [starter, growth, pro, enterprise]
+    nullable: false
+  - name: status
+    type: STRING
+    description: Subscription status
+    values: [trialing, active, past_due, cancelled, paused]
+    nullable: false
+  - name: started_at
+    type: TIMESTAMP
+    description: Subscription start timestamp
+    nullable: false
+  - name: cancelled_at
+    type: TIMESTAMP
+    description: Cancellation timestamp (null if active)
+    nullable: true
+  - name: trial_ends_at
+    type: TIMESTAMP
+    description: Trial expiry timestamp (null if not trialing)
+    nullable: true
+  - name: mrr_usd
+    type: FLOAT64
+    description: Monthly recurring revenue contribution in USD
+    nullable: false
+  - name: billing_interval
+    type: STRING
+    description: Billing cycle interval
+    values: [monthly, quarterly, annual]
+    nullable: false

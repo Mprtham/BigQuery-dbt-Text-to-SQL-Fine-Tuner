@@ -1,0 +1,57 @@
+table: sessions
+dataset: analytics
+description: Aggregated web/app sessions derived from event stream
+columns:
+  - name: session_id
+    type: STRING
+    description: Unique session identifier
+    nullable: false
+  - name: user_id
+    type: STRING
+    description: Authenticated user ID (null for anonymous)
+    nullable: true
+  - name: anonymous_id
+    type: STRING
+    description: Client-side anonymous ID
+    nullable: false
+  - name: started_at
+    type: TIMESTAMP
+    description: Session start timestamp
+    nullable: false
+  - name: ended_at
+    type: TIMESTAMP
+    description: Session end timestamp (null if active)
+    nullable: true
+  - name: duration_seconds
+    type: INT64
+    description: Session duration in seconds
+    nullable: true
+  - name: page_views
+    type: INT64
+    description: Number of page views in session
+    nullable: false
+  - name: platform
+    type: STRING
+    description: Client platform
+    values: [web, ios, android]
+    nullable: false
+  - name: utm_source
+    type: STRING
+    description: UTM source parameter
+    nullable: true
+  - name: utm_medium
+    type: STRING
+    description: UTM medium parameter
+    nullable: true
+  - name: utm_campaign
+    type: STRING
+    description: UTM campaign parameter
+    nullable: true
+  - name: landing_page
+    type: STRING
+    description: First page URL of session
+    nullable: true
+  - name: country
+    type: STRING
+    description: GeoIP country ISO-2
+    nullable: true

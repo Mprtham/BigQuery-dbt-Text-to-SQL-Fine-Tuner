@@ -1,0 +1,56 @@
+table: support_tickets
+dataset: support
+description: Customer support ticket log
+columns:
+  - name: ticket_id
+    type: STRING
+    description: Unique ticket identifier
+    nullable: false
+  - name: customer_id
+    type: STRING
+    description: Foreign key to customers table
+    nullable: false
+  - name: order_id
+    type: STRING
+    description: Associated order (if applicable)
+    nullable: true
+  - name: created_at
+    type: TIMESTAMP
+    description: Ticket creation timestamp
+    nullable: false
+  - name: resolved_at
+    type: TIMESTAMP
+    description: Resolution timestamp (null if open)
+    nullable: true
+  - name: channel
+    type: STRING
+    description: Support contact channel
+    values: [email, chat, phone, self_serve]
+    nullable: false
+  - name: category
+    type: STRING
+    description: Issue category
+    values: [shipping, billing, product, account, returns, other]
+    nullable: false
+  - name: priority
+    type: STRING
+    description: Ticket priority level
+    values: [low, medium, high, urgent]
+    nullable: false
+  - name: status
+    type: STRING
+    description: Current ticket status
+    values: [open, pending, resolved, closed]
+    nullable: false
+  - name: csat_score
+    type: INT64
+    description: Customer satisfaction score 1-5 (null if not rated)
+    nullable: true
+  - name: agent_id
+    type: STRING
+    description: Assigned support agent ID
+    nullable: true
+  - name: resolution_time_minutes
+    type: INT64
+    description: Time from creation to resolution in minutes
+    nullable: true

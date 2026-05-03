@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SQL Forge — BigQuery + dbt Text-to-SQL Fine-Tuner</title>
+  <meta name="description" content="The first open-source model that speaks BigQuery dialect and dbt Jinja natively. Fine-tuned Phi-3-mini on 207 hand-crafted examples." />
+
+  <!-- Prism.js syntax highlighting -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" />
+  <link rel="stylesheet" href="assets/style.css" />
+
+  <!-- Favicon via emoji -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔥</text></svg>" />
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════
+     NAV
+═══════════════════════════════════════════════════════════ -->
+<nav class="nav">
+  <a href="#hero" class="nav-logo">🔥 SQL Forge</a>
+  <ul class="nav-links">
+    <li><a href="#architecture">Architecture</a></li>
+    <li><a href="#comparison">Why Forge</a></li>
+    <li><a href="#training">Training</a></li>
+    <li><a href="#demo">Demo</a></li>
+    <li><a href="#stack">Stack</a></li>
+  </ul>
+  <a href="https://huggingface.co/Mpratham/sql-forge-phi3-v1" target="_blank" rel="noopener" class="nav-cta">HuggingFace →</a>
+  <div class="nav-hamburger" onclick="document.querySelector('.nav-links').style.display = document.querySelector('.nav-links').style.display === 'flex' ? 'none' : 'flex'">
+    <span></span><span></span><span></span>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════════════════════════
+     HERO
+═══════════════════════════════════════════════════════════ -->
+<section id="hero" class="hero">
+  <div class="hero-grid-bg"></div>
+  <div class="hero-glow"></div>
+
+  <div class="hero-inner">
+    <!-- Left: copy -->
+    <div class="hero-text">
+      <div class="hero-eyebrow">
+        <span class="dot"></span>
+        Open Source · MIT License · Phi-3-mini 3.8B
+      </div>
+
+      <h1 class="hero-title">
+        <span class="sql">SQL</span><span class="forge">Forge</span>
+      </h1>
+      <p class="hero-subtitle">BigQuery + dbt Text-to-SQL Fine-Tuner</p>
+      <p class="hero-pitch">
+        The first open-source model that speaks
+        <em>BigQuery dialect</em> and <em>dbt Jinja</em> natively —
+        QUALIFY, UNNEST, ARRAY_AGG, <code style="font-size:0.9em;color:#818cf8">{{ ref() }}</code>,
+        and incremental models out of the box.
+      </p>
+
+      <div class="hero-badges">
+        <a href="https://huggingface.co/datasets/Mpratham/bq-dbt-sql-sft" target="_blank" rel="noopener" class="badge badge-hf">
+          🤗 SFT Dataset
+        </a>
+        <a href="https://huggingface.co/datasets/Mpratham/bq-dbt-sql-dpo" target="_blank" rel="noopener" class="badge badge-hf">
+          🤗 DPO Dataset
+        </a>
+        <span class="badge badge-green">✦ 3.8B Parameters</span>
+        <span class="badge">⚡ QLoRA LoRA r=64</span>
+        <span class="badge">📊 207 SFT + 200 DPO</span>
+      </div>
+
+      <div class="hero-cta">
+        <a href="https://huggingface.co/Mpratham/sql-forge-phi3-v1" target="_blank" rel="noopener" class="btn btn-primary">
+          View on HuggingFace →
+        </a>
+        <a href="https://github.com/Mprtham/BigQuery-dbt-Text-to-SQL-Fine-Tuner" target="_blank" rel="noopener" class="btn btn-secondary">
+          ⭐ GitHub
+        </a>
+      </div>
+    </div>
+
+    <!-- Right: terminal -->
+    <div class="hero-terminal">
+      <div class="terminal">
+        <div class="terminal-bar">
+          <span class="dot-red"></span>
+          <span class="dot-yellow"></span>
+          <span class="dot-green"></span>
+          <span class="terminal-title">sql-forge — live generation</span>
+        </div>
+        <div class="terminal-body">
+          <div class="terminal-row">
+            <span class="terminal-prompt">$</span>
+            <span class="terminal-text" style="color:#94a3b8">sql-forge generate</span>
+          </div>
+          <div class="terminal-row" style="margin-top:0.25rem">
+            <span class="terminal-prompt" style="color:#f59e0b">question:</span>
+            <span class="terminal-text" id="hero-question"></span><span class="cursor"></span>
+          </div>
+
+          <div class="terminal-divider"></div>
+
+          <div class="terminal-row" style="margin-bottom:0.5rem">
+            <span class="terminal-prompt" style="color:#38bdf8">▶ sql:</span>
+          </div>
+          <div class="terminal-output">
+            <div id="hero-pre" style="transition:opacity 0.3s">
+              <pre><code id="hero-sql" class="language-sql"></code></pre>
+            </div>
+          </div>
+
+          <div class="terminal-cycle">
+            <span style="margin-right:0.25rem">examples:</span>
+            <span class="cycle-dot active" data-idx="0"></span>
+            <span class="cycle-dot" data-idx="1"></span>
+            <span class="cycle-dot" data-idx="2"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     STATS BAR
+═══════════════════════════════════════════════════════════ -->
+<div class="stats-bar">
+  <div class="stats-inner">
+    <div class="stat-item fade-in">
+      <span class="stat-num">207</span>
+      <span class="stat-label">SFT Training Examples</span>
+    </div>
+    <div class="stat-item fade-in fade-in-delay-1">
+      <span class="stat-num">200</span>
+      <span class="stat-label">DPO Preference Pairs</span>
+    </div>
+    <div class="stat-item fade-in fade-in-delay-2">
+      <span class="stat-num">6</span>
+      <span class="stat-label">Anti-Pattern Types</span>
+    </div>
+    <div class="stat-item fade-in fade-in-delay-3">
+      <span class="stat-num">50</span>
+      <span class="stat-label">Gold Eval Examples</span>
+    </div>
+    <div class="stat-item fade-in fade-in-delay-4">
+      <span class="stat-num">10</span>
+      <span class="stat-label">BigQuery Schemas</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     ARCHITECTURE
+═══════════════════════════════════════════════════════════ -->
+<section id="architecture" class="section">
+  <div class="fade-in">
+    <span class="section-label">01 — Architecture</span>
+    <h2 class="section-title">End-to-end fine-tuning pipeline</h2>
+    <p class="section-desc">
+      From raw BigQuery schemas to a production-ready SQL generator.
+      Hover each stage to see the details.
+    </p>
+  </div>
+
+  <div class="arch-flow fade-in fade-in-delay-1">
+
+    <div class="arch-node">
+      <span class="arch-icon">🗂️</span>
+      <div class="arch-name">10 Schemas</div>
+      <div class="arch-stat">10 BQ tables</div>
+      <div class="arch-sub">YAML definitions</div>
+      <div class="arch-tooltip">
+        <strong>Data Sources</strong>
+        <p>10 realistic BigQuery table schemas: orders, customers, events, sessions, products, inventory, ad_spend, returns, subscriptions, support_tickets.</p>
+      </div>
+    </div>
+
+    <div class="arch-arrow">→</div>
+
+    <div class="arch-node">
+      <span class="arch-icon">🤖</span>
+      <div class="arch-name">LLM Synthesis</div>
+      <div class="arch-stat">Groq llama-3.3-70b</div>
+      <div class="arch-sub">+ deterministic templates</div>
+      <div class="arch-tooltip">
+        <strong>Groq llama-3.3-70b-versatile</strong>
+        <p>Generates diverse SQL from schema+question pairs. Falls back to llama-3.1-8b-instant. Deterministic BQ/dbt templates seed the pipeline.</p>
+      </div>
+    </div>
+
+    <div class="arch-arrow">→</div>
+
+    <div class="arch-split">
+      <div class="arch-node" style="width:140px">
+        <span class="arch-icon">📚</span>
+        <div class="arch-name">SFT Dataset</div>
+        <div class="arch-stat">207 train · 24 test</div>
+        <div class="arch-sub">prompt → completion</div>
+        <div class="arch-tooltip">
+          <strong>Supervised Fine-Tuning Data</strong>
+          <p>Easy BQ queries (window fns, CTEs), medium (QUALIFY, UNNEST, ARRAY_AGG), hard (STRUCT, cohorts), and dbt Jinja models.</p>
+        </div>
+      </div>
+      <div class="arch-split-arrow" style="font-size:1.5rem;color:#334155">⇅</div>
+      <div class="arch-node" style="width:140px">
+        <span class="arch-icon">⚖️</span>
+        <div class="arch-name">DPO Pairs</div>
+        <div class="arch-stat">200 pairs</div>
+        <div class="arch-sub">chosen vs rejected</div>
+        <div class="arch-tooltip">
+          <strong>DPO Preference Data</strong>
+          <p>6 rejection types: mysql_dialect, no_qualify, wrong_date_function, missing_unnest, select_star, wrong_jinja. Trains the model to prefer correct BQ patterns.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="arch-arrow">→</div>
+
+    <div class="arch-node">
+      <span class="arch-icon">🏋️</span>
+      <div class="arch-name">QLoRA SFT</div>
+      <div class="arch-stat">Unsloth · r=64</div>
+      <div class="arch-sub">3 epochs · 2e-4 lr</div>
+      <div class="arch-tooltip">
+        <strong>Phase 1 — Supervised Fine-Tuning</strong>
+        <p>Unsloth QLoRA on Phi-3-mini-4k-instruct. LoRA r=64, alpha=128, cosine scheduler, effective batch=16 on 24GB VRAM.</p>
+      </div>
+    </div>
+
+    <div class="arch-arrow">→</div>
+
+    <div class="arch-node">
+      <span class="arch-icon">🎯</span>
+      <div class="arch-name">DPO Alignment</div>
+      <div class="arch-stat">TRL DPOTrainer</div>
+      <div class="arch-sub">β=0.1 · 1 epoch</div>
+      <div class="arch-tooltip">
+        <strong>Phase 2 — Direct Preference Optimization</strong>
+        <p>TRL DPOTrainer aligned against 6 SQL anti-patterns. Beta=0.1 KL penalty. Trains the model to avoid MySQL dialect, missing QUALIFY, etc.</p>
+      </div>
+    </div>
+
+    <div class="arch-arrow">→</div>
+
+    <div class="arch-node" style="border-color:rgba(99,102,241,0.5);box-shadow:0 0 20px rgba(99,102,241,0.15)">
+      <span class="arch-icon">✨</span>
+      <div class="arch-name">sql-forge-phi3</div>
+      <div class="arch-stat" style="color:#10b981">HuggingFace Hub</div>
+      <div class="arch-sub">Mpratham/sql-forge-phi3-v1</div>
+      <div class="arch-tooltip">
+        <strong>Published Model</strong>
+        <p>Phi-3-mini-4k-instruct fine-tuned for BigQuery dialect SQL and dbt Jinja. Available at Mpratham/sql-forge-phi3-v1 on HuggingFace.</p>
+      </div>
+    </div>
+
+    <div class="arch-arrow">→</div>
+
+    <div class="arch-node">
+      <span class="arch-icon">🚀</span>
+      <div class="arch-name">Inference</div>
+      <div class="arch-stat">FastAPI · Streamlit</div>
+      <div class="arch-sub">vLLM · REST API</div>
+      <div class="arch-tooltip">
+        <strong>Deployment</strong>
+        <p>FastAPI /generate endpoint with lazy model loading. Streamlit playground for interactive SQL generation. Docker-ready for cloud deployment.</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     COMPARISON
+═══════════════════════════════════════════════════════════ -->
+<div id="comparison" class="section-full">
+  <div class="section-inner">
+
+    <div class="fade-in">
+      <span class="section-label">02 — Why SQL Forge</span>
+      <h2 class="section-title">Built for the BigQuery + dbt ecosystem</h2>
+      <p class="section-desc">
+        Generic text-to-SQL models are trained on Spider benchmark data.
+        SQL Forge is purpose-built for real-world data-warehouse SQL.
+      </p>
+    </div>
+
+    <div class="compare-grid fade-in fade-in-delay-1">
+      <!-- Generic -->
+      <div class="compare-card">
+        <div class="compare-header">
+          <span class="compare-icon">🔧</span>
+          <div>
+            <div class="compare-name">Generic SQLCoder / Defog</div>
+            <span class="compare-tag">Spider · WikiSQL trained</span>
+          </div>
+        </div>
+        <div class="compare-row">
+          <span class="compare-check">❌</span>
+          <div class="compare-row-text"><strong>No BigQuery dialect</strong> — uses ANSI SQL; generates <code>DATE_FORMAT()</code> instead of <code>FORMAT_DATE()</code></div>
+        </div>
+        <div class="compare-row">
+          <span class="compare-check">❌</span>
+          <div class="compare-row-text"><strong>No QUALIFY</strong> — rewrites deduplication as verbose nested subqueries instead of <code>QUALIFY ROW_NUMBER()=1</code></div>
+        </div>
+        <div class="compare-row">
+          <span class="compare-check">❌</span>
+          <div class="compare-row-text"><strong>No dbt macros</strong> — cannot generate <code>{{ ref() }}</code>, <code>{% if is_incremental() %}</code>, or <code>{{ config() }}</code></div>
+        </div>
+        <div class="compare-row">
+          <span class="compare-check">❌</span>
+          <div class="compare-row-text"><strong>No UNNEST syntax</strong> — BigQuery array-unnesting pattern is absent from training data</div>
+        </div>
+        <div class="compare-row">
+          <span class="compare-check">✅</span>
+          <div class="compare-row-text"><strong>General SQL coverage</strong> — good at generic SELECT / JOIN / GROUP BY across many SQL dialects</div>
+        </div>
+      </div>
+
+      <!-- SQL Forge -->
+      <div class="compare-card featured">
+        <div class="compare-header">
+          <span class="compare-icon">🔥</span>
+          <div>
+            <div class="compare-name">SQL Forge</div>
+            <span class="compare-tag">BigQuery + dbt trained</span>
+          </div>
+        </div>
+        <div class="compare-row">
+          <span class="compare-check">✅</span>
+          <div class="compare-row-text"><strong>Native BigQuery dialect</strong> — <code>FORMAT_DATE</code>, <code>DATE_TRUNC</code>, <code>TIMESTAMP_DIFF</code>, <code>EXTRACT</code>, backtick table refs</div>
+        </div>
+        <div class="compare-row">
+          <span class="compare-check">✅</span>
+          <div class="compare-row-text"><strong>QUALIFY clause</strong> — uses BigQuery's <code>QUALIFY ROW_NUMBER() OVER (...) = 1</code> pattern natively</div>
+        </div>
+        <div class="compare-row">
+          <span class="compare-check">✅</span>
+          <div class="compare-row-text"><strong>dbt Jinja macros</strong> — generates <code>{{ ref() }}</code>, <code>{{ source() }}</code>, <code>{% if is_incremental() %}</code>, <code>{{ config() }}</code></div>
+        </div>
+        <div class="compare-row">
+          <span class="compare-check">✅</span>
+          <div class="compare-row-text"><strong>UNNEST + ARRAY_AGG</strong> — correct BigQuery array expansion with proper <code>UNNEST(col) AS alias</code> syntax</div>
+        </div>
+        <div class="compare-row">
+          <span class="compare-check">✅</span>
+          <div class="compare-row-text"><strong>DPO anti-pattern training</strong> — explicitly trained away from 6 common BigQuery mistakes via preference optimization</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Code showcase -->
+    <div class="code-showcase fade-in fade-in-delay-2">
+      <div class="code-tabs">
+        <div class="code-tab active" data-tab="qualify">QUALIFY dedup</div>
+        <div class="code-tab" data-tab="incremental">dbt incremental</div>
+        <div class="code-tab" data-tab="unnest">UNNEST arrays</div>
+        <div class="code-tab" data-tab="cohort">Cohort retention</div>
+      </div>
+
+      <div class="code-panel active" data-panel="qualify">
+        <pre><code class="language-sql">-- Question: "Return only each customer's most recent order"
+-- SQL Forge generates:
+
+SELECT
+  order_id,
+  customer_id,
+  created_at,
+  amount_usd,
+  status
+FROM `project.ecommerce.orders`
+WHERE status NOT IN ('cancelled', 'refunded')
+QUALIFY
+  ROW_NUMBER() OVER (
+    PARTITION BY customer_id
+    ORDER BY created_at DESC
+  ) = 1
+
+-- Generic model would generate (wrong):
+-- SELECT * FROM (
+--   SELECT *, ROW_NUMBER() OVER (...) AS _rn FROM orders
+-- ) WHERE _rn = 1  ← not idiomatic BigQuery</code></pre>
+      </div>
+
+      <div class="code-panel" data-panel="incremental">
+        <pre><code class="language-sql">-- Question: "Create an incremental dbt model for daily revenue"
+-- SQL Forge generates:
+
+{{ config(
+  materialized = 'incremental',
+  unique_key   = 'date_day',
+  tags         = ['revenue', 'daily']
+) }}
+
+WITH orders AS (
+  SELECT
+    DATE_TRUNC(created_at, DAY) AS date_day,
+    SUM(amount_usd)             AS revenue_usd,
+    COUNT(DISTINCT order_id)    AS order_count
+  FROM {{ ref('stg_orders') }}
+  WHERE status != 'cancelled'
+  {% if is_incremental() %}
+    AND created_at > (
+      SELECT MAX(date_day) FROM {{ this }}
+    )
+  {% endif %}
+  GROUP BY 1
+)
+SELECT * FROM orders</code></pre>
+      </div>
+
+      <div class="code-panel" data-panel="unnest">
+        <pre><code class="language-sql">-- Question: "Sum revenue per product from the items array in orders"
+-- SQL Forge generates:
+
+SELECT
+  item.sku                        AS product_sku,
+  SUM(item.qty * item.unit_price) AS total_revenue_usd,
+  COUNT(DISTINCT o.order_id)      AS order_count
+FROM `project.ecommerce.orders` o
+  , UNNEST(o.items) AS item        -- ← correct BigQuery array unnesting
+WHERE o.status = 'delivered'
+  AND o.created_at >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 30 DAY)
+GROUP BY 1
+ORDER BY total_revenue_usd DESC
+LIMIT 20
+
+-- Generic model often generates (wrong):
+-- FROM orders, orders.items AS item  ← invalid in BigQuery</code></pre>
+      </div>
+
+      <div class="code-panel" data-panel="cohort">
+        <pre><code class="language-sql">-- Question: "Show monthly retention cohorts for the past year"
+-- SQL Forge generates:
+
+WITH cohorts AS (
+  SELECT
+    u.user_id,
+    DATE_TRUNC(u.created_at, MONTH)     AS cohort_month,
+    DATE_TRUNC(e.event_time, MONTH)     AS activity_month
+  FROM `project.ecommerce.users` u
+  JOIN `project.ecommerce.events` e USING (user_id)
+  WHERE e.event_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 365 DAY)
+)
+SELECT
+  FORMAT_DATE('%Y-%m', cohort_month)                        AS cohort,
+  DATE_DIFF(activity_month, cohort_month, MONTH)            AS months_since_signup,
+  COUNT(DISTINCT user_id)                                   AS retained_users,
+  COUNT(DISTINCT user_id) / FIRST_VALUE(COUNT(DISTINCT user_id))
+    OVER (PARTITION BY cohort_month
+          ORDER BY DATE_DIFF(activity_month, cohort_month, MONTH)
+          ROWS UNBOUNDED PRECEDING)                         AS retention_rate
+FROM cohorts
+GROUP BY 1, 2
+QUALIFY DATE_DIFF(activity_month, cohort_month, MONTH) BETWEEN 0 AND 11
+ORDER BY cohort, months_since_signup</code></pre>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     TRAINING PIPELINE
+═══════════════════════════════════════════════════════════ -->
+<section id="training" class="section">
+  <div class="fade-in">
+    <span class="section-label">03 — Training Pipeline</span>
+    <h2 class="section-title">Two-phase fine-tuning strategy</h2>
+    <p class="section-desc">
+      Phase 1 teaches BigQuery+dbt syntax via SFT. Phase 2 aligns preferences
+      via DPO — making the model actively avoid common anti-patterns.
+    </p>
+  </div>
+
+  <div class="pipeline-steps fade-in fade-in-delay-1">
+    <div class="pipeline-step active">
+      <div class="step-circle">
+        🗂️
+        <div class="step-num">1</div>
+      </div>
+      <div class="step-name">Data Generation</div>
+      <div class="step-detail">Groq llama-3.3-70b<br>+ deterministic templates</div>
+    </div>
+
+    <div class="pipeline-step">
+      <div class="step-circle">
+        ✅
+        <div class="step-num">2</div>
+      </div>
+      <div class="step-name">Validation</div>
+      <div class="step-detail">sqlglot BQ dialect parse<br>zero invalid records</div>
+    </div>
+
+    <div class="pipeline-step">
+      <div class="step-circle">
+        🏋️
+        <div class="step-num">3</div>
+      </div>
+      <div class="step-name">SFT Training</div>
+      <div class="step-detail">Unsloth QLoRA r=64<br>3 epochs · 2e-4 lr</div>
+    </div>
+
+    <div class="pipeline-step">
+      <div class="step-circle">
+        🎯
+        <div class="step-num">4</div>
+      </div>
+      <div class="step-name">DPO Alignment</div>
+      <div class="step-detail">TRL DPOTrainer<br>β=0.1 · 200 pairs</div>
+    </div>
+
+    <div class="pipeline-step">
+      <div class="step-circle">
+        📊
+        <div class="step-num">5</div>
+      </div>
+      <div class="step-name">Benchmark</div>
+      <div class="step-detail">Exact match · Parse acc<br>50 gold examples</div>
+    </div>
+
+    <div class="pipeline-step">
+      <div class="step-circle">
+        🚀
+        <div class="step-num">6</div>
+      </div>
+      <div class="step-name">Publish</div>
+      <div class="step-detail">HuggingFace Hub<br>Mpratham/sql-forge-phi3-v1</div>
+    </div>
+  </div>
+
+  <!-- Config cards -->
+  <div class="config-grid fade-in fade-in-delay-2">
+    <div class="config-card">
+      <div class="config-phase">Phase 1 — SFT (Unsloth QLoRA)</div>
+      <ul class="config-params">
+        <li><span class="config-key">Base model</span><span class="config-val">Phi-3-mini-4k</span></li>
+        <li><span class="config-key">LoRA rank</span><span class="config-val">r=64</span></li>
+        <li><span class="config-key">LoRA alpha</span><span class="config-val">α=128</span></li>
+        <li><span class="config-key">Learning rate</span><span class="config-val">2e-4</span></li>
+        <li><span class="config-key">Epochs</span><span class="config-val">3</span></li>
+        <li><span class="config-key">Eff. batch size</span><span class="config-val">16</span></li>
+        <li><span class="config-key">Scheduler</span><span class="config-val">cosine</span></li>
+        <li><span class="config-key">Quantization</span><span class="config-val">none (fp16)</span></li>
+      </ul>
+    </div>
+
+    <div class="config-card">
+      <div class="config-phase">Phase 2 — DPO (TRL)</div>
+      <ul class="config-params">
+        <li><span class="config-key">Algorithm</span><span class="config-val">DPO</span></li>
+        <li><span class="config-key">Beta (KL penalty)</span><span class="config-val">β=0.1</span></li>
+        <li><span class="config-key">Learning rate</span><span class="config-val">5e-5</span></li>
+        <li><span class="config-key">Epochs</span><span class="config-val">1</span></li>
+        <li><span class="config-key">Training pairs</span><span class="config-val">200</span></li>
+        <li><span class="config-key">Rejection types</span><span class="config-val">6</span></li>
+        <li><span class="config-key">Init from</span><span class="config-val">SFT model</span></li>
+      </ul>
+    </div>
+
+    <div class="config-card">
+      <div class="config-phase">DPO Anti-patterns (rejected)</div>
+      <ul class="config-params">
+        <li><span class="config-key">mysql_dialect</span><span class="config-val" style="color:#ef4444">DATE_FORMAT</span></li>
+        <li><span class="config-key">no_qualify</span><span class="config-val" style="color:#ef4444">nested _rn</span></li>
+        <li><span class="config-key">wrong_date_fn</span><span class="config-val" style="color:#ef4444">FORMAT_TIMESTAMP</span></li>
+        <li><span class="config-key">missing_unnest</span><span class="config-val" style="color:#ef4444">items.sku</span></li>
+        <li><span class="config-key">select_star</span><span class="config-val" style="color:#ef4444">SELECT *</span></li>
+        <li><span class="config-key">wrong_jinja</span><span class="config-val" style="color:#ef4444">if this</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Benchmark table -->
+  <div class="fade-in fade-in-delay-3">
+    <h3 style="font-size:1rem;color:var(--text-2);margin-top:2.5rem;margin-bottom:0.25rem">
+      Expected benchmark results (50 gold examples)
+    </h3>
+    <p style="font-size:0.78rem;color:var(--text-3);margin-bottom:1rem">
+      Base → SFT → DPO progression on held-out BigQuery queries
+    </p>
+    <table class="metrics-table">
+      <thead>
+        <tr>
+          <th>Metric</th>
+          <th>Base Phi-3</th>
+          <th>+ SFT</th>
+          <th>+ DPO (target)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Exact Match</td>
+          <td><span class="metric-val metric-low">~15%</span></td>
+          <td><span class="metric-val metric-mid">~55%</span></td>
+          <td><span class="metric-val metric-high">~60% <span class="metric-target">target</span></span></td>
+        </tr>
+        <tr>
+          <td>Parse Accuracy (sqlglot BQ)</td>
+          <td><span class="metric-val metric-low">~60%</span></td>
+          <td><span class="metric-val metric-mid">~90%</span></td>
+          <td><span class="metric-val metric-high">~93% <span class="metric-target">target</span></span></td>
+        </tr>
+        <tr>
+          <td>QUALIFY usage (when needed)</td>
+          <td><span class="metric-val metric-low">~5%</span></td>
+          <td><span class="metric-val metric-mid">~80%</span></td>
+          <td><span class="metric-val metric-high">~90% <span class="metric-target">target</span></span></td>
+        </tr>
+        <tr>
+          <td>dbt Jinja correct syntax</td>
+          <td><span class="metric-val metric-low">~10%</span></td>
+          <td><span class="metric-val metric-mid">~75%</span></td>
+          <td><span class="metric-val metric-high">~85% <span class="metric-target">target</span></span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     LIVE DEMO
+═══════════════════════════════════════════════════════════ -->
+<div id="demo" class="section-full">
+  <div class="section-inner">
+
+    <div class="fade-in">
+      <span class="section-label">04 — Interactive Demo</span>
+      <h2 class="section-title">Try SQL Forge</h2>
+      <p class="section-desc">
+        Enter your schema and question — see BigQuery or dbt SQL generated
+        in real time. <span style="color:var(--text-3)">(Mock — full model requires GPU)</span>
+      </p>
+    </div>
+
+    <div class="demo-wrapper fade-in fade-in-delay-1">
+
+      <!-- Input panel -->
+      <div class="demo-input-panel">
+        <div class="panel-header">
+          <span>Input</span>
+          <span class="panel-badge">sql-forge-phi3-v1</span>
+        </div>
+        <div class="panel-body">
+
+          <div class="form-group">
+            <label class="form-label">Dialect</label>
+            <div class="dialect-toggle">
+              <button class="dialect-btn active" data-dialect="bigquery">BigQuery</button>
+              <button class="dialect-btn" data-dialect="dbt">dbt Jinja</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Schema</label>
+            <textarea class="form-textarea" id="demo-schema" rows="7">table: orders
+columns:
+  - name: order_id     type: STRING   description: unique order id
+  - name: customer_id  type: STRING   description: FK to customers
+  - name: created_at   type: TIMESTAMP
+  - name: status       type: STRING   values: [pending,shipped,delivered,cancelled]
+  - name: amount_usd   type: FLOAT64
+  - name: channel      type: STRING   description: acquisition channel</textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">
+              Question
+              <button id="demo-example-btn" style="float:right;font-size:0.65rem;color:var(--accent-light);background:none;border:none;cursor:pointer;font-weight:600">use example ↗</button>
+            </label>
+            <input class="form-input" id="demo-question" type="text"
+              placeholder="e.g. Show monthly revenue by acquisition channel" />
+          </div>
+
+          <button class="generate-btn" id="demo-generate-btn">
+            ✨ Generate SQL
+          </button>
+        </div>
+      </div>
+
+      <!-- Output panel -->
+      <div class="demo-output-panel">
+        <div class="panel-header">
+          <span>Generated SQL</span>
+          <span class="panel-badge" style="background:rgba(16,185,129,0.1);color:var(--success);border:1px solid rgba(16,185,129,0.3)">sqlglot validated</span>
+        </div>
+        <div class="panel-body">
+          <div class="output-code" style="min-height:320px">
+            <pre><code id="demo-sql-output" class="language-sql">-- Click "Generate SQL" to see the output.
+-- SQL Forge will produce BigQuery-dialect SQL
+-- with proper QUALIFY, UNNEST, FORMAT_DATE,
+-- and dbt Jinja macros when applicable.</code></pre>
+            <div class="generating-spinner" id="demo-spinner">
+              <div class="spinner"></div>
+            </div>
+          </div>
+          <div class="output-meta" id="demo-meta"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     TECH STACK
+═══════════════════════════════════════════════════════════ -->
+<section id="stack" class="section">
+  <div class="fade-in">
+    <span class="section-label">05 — Tech Stack</span>
+    <h2 class="section-title">Built with best-in-class ML tooling</h2>
+    <p class="section-desc">
+      Every component chosen for performance, reproducibility, and
+      ease of deployment on a single GPU.
+    </p>
+  </div>
+
+  <div class="stack-grid fade-in fade-in-delay-1">
+    <div class="stack-card">
+      <span class="stack-icon">⚡</span>
+      <div>
+        <div class="stack-name">Unsloth</div>
+        <div class="stack-desc">2–5× faster QLoRA fine-tuning with 60% less VRAM via custom CUDA kernels.</div>
+        <span class="stack-tag">SFT Training</span>
+      </div>
+    </div>
+    <div class="stack-card">
+      <span class="stack-icon">🤗</span>
+      <div>
+        <div class="stack-name">TRL</div>
+        <div class="stack-desc">HuggingFace's TRL library — DPOTrainer for preference optimization from DPO pairs.</div>
+        <span class="stack-tag">DPO Training</span>
+      </div>
+    </div>
+    <div class="stack-card">
+      <span class="stack-icon">🚀</span>
+      <div>
+        <div class="stack-name">vLLM</div>
+        <div class="stack-desc">High-throughput inference with PagedAttention. Serves the fine-tuned model via OpenAI-compatible API.</div>
+        <span class="stack-tag">Inference</span>
+      </div>
+    </div>
+    <div class="stack-card">
+      <span class="stack-icon">🌐</span>
+      <div>
+        <div class="stack-name">FastAPI</div>
+        <div class="stack-desc">Async REST endpoint <code>/generate</code> with Pydantic validation, lazy model loading, and latency metrics.</div>
+        <span class="stack-tag">API</span>
+      </div>
+    </div>
+    <div class="stack-card">
+      <span class="stack-icon">🎨</span>
+      <div>
+        <div class="stack-name">Streamlit</div>
+        <div class="stack-desc">Interactive playground with schema textarea, dialect toggle, and live SQL generation preview.</div>
+        <span class="stack-tag">UI</span>
+      </div>
+    </div>
+    <div class="stack-card">
+      <span class="stack-icon">🔍</span>
+      <div>
+        <div class="stack-name">sqlglot</div>
+        <div class="stack-desc">BigQuery dialect parse validation. Strips dbt Jinja before parsing — used in eval pipeline and dataset validation.</div>
+        <span class="stack-tag">Evaluation</span>
+      </div>
+    </div>
+    <div class="stack-card">
+      <span class="stack-icon">📦</span>
+      <div>
+        <div class="stack-name">HuggingFace datasets</div>
+        <div class="stack-desc">SFT and DPO datasets published as <code>Mpratham/bq-dbt-sql-sft</code> and <code>bq-dbt-sql-dpo</code>.</div>
+        <span class="stack-tag">Data</span>
+      </div>
+    </div>
+    <div class="stack-card">
+      <span class="stack-icon">🤖</span>
+      <div>
+        <div class="stack-name">Groq</div>
+        <div class="stack-desc">llama-3.3-70b-versatile via Groq API for high-speed LLM-assisted SQL pair synthesis.</div>
+        <span class="stack-tag">Data Gen</span>
+      </div>
+    </div>
+    <div class="stack-card">
+      <span class="stack-icon">🐋</span>
+      <div>
+        <div class="stack-name">Docker</div>
+        <div class="stack-desc">Single Dockerfile for GPU training and CPU inference deployment on Render / RunPod / Vast.ai.</div>
+        <span class="stack-tag">Deploy</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     FOOTER
+═══════════════════════════════════════════════════════════ -->
+<footer>
+  <div class="footer-inner">
+
+    <div class="footer-brand">
+      <div class="footer-logo">🔥 SQL Forge</div>
+      <p class="footer-tagline">
+        Fine-tuned Phi-3-mini-4k-instruct for BigQuery dialect SQL
+        and dbt Jinja macro generation. Published on HuggingFace.
+      </p>
+      <p class="footer-sub" style="margin-top:1.5rem;font-size:0.72rem;letter-spacing:0.04em">
+        made by <a href="https://linkedin.com/in/prathamesh-mishra" target="_blank" rel="noopener" style="text-transform:lowercase">prathamesh mishra</a>
+        &nbsp;·&nbsp; <a href="mailto:mprathamesh2023@gmail.com" style="text-transform:lowercase">mprathamesh2023@gmail.com</a>
+      </p>
+    </div>
+
+    <div>
+      <div class="footer-col-title">Model &amp; Datasets</div>
+      <ul class="footer-links">
+        <li><a href="https://huggingface.co/Mpratham/sql-forge-phi3-v1" target="_blank" rel="noopener">🤗 sql-forge-phi3-v1</a></li>
+        <li><a href="https://huggingface.co/datasets/Mpratham/bq-dbt-sql-sft" target="_blank" rel="noopener">🤗 bq-dbt-sql-sft</a></li>
+        <li><a href="https://huggingface.co/datasets/Mpratham/bq-dbt-sql-dpo" target="_blank" rel="noopener">🤗 bq-dbt-sql-dpo</a></li>
+        <li><a href="https://github.com/Mprtham/BigQuery-dbt-Text-to-SQL-Fine-Tuner" target="_blank" rel="noopener">⭐ GitHub Repo</a></li>
+      </ul>
+    </div>
+
+    <div>
+      <div class="footer-col-title">Resources</div>
+      <ul class="footer-links">
+        <li><a href="#architecture">Architecture Diagram</a></li>
+        <li><a href="#comparison">Why SQL Forge</a></li>
+        <li><a href="#training">Training Config</a></li>
+        <li><a href="#demo">Interactive Demo</a></li>
+        <li><a href="#stack">Tech Stack</a></li>
+      </ul>
+    </div>
+
+  </div>
+
+  <div class="footer-bottom">
+    <span style="text-transform:lowercase;letter-spacing:0.03em">made by prathamesh mishra &nbsp;·&nbsp; <a href="https://github.com/Mprtham/BigQuery-dbt-Text-to-SQL-Fine-Tuner/blob/main/LICENSE" target="_blank" rel="noopener">mit license</a></span>
+    <span class="license-badge">MIT License</span>
+  </div>
+</footer>
+
+<!-- ── Scripts ── -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>

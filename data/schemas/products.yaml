@@ -1,0 +1,48 @@
+table: products
+dataset: catalog
+description: Product catalogue with pricing and category hierarchy
+columns:
+  - name: product_id
+    type: STRING
+    description: Unique product identifier
+    nullable: false
+  - name: sku
+    type: STRING
+    description: Stock-keeping unit code
+    nullable: false
+  - name: name
+    type: STRING
+    description: Product display name
+    nullable: false
+  - name: category
+    type: STRING
+    description: Top-level category
+    nullable: false
+  - name: subcategory
+    type: STRING
+    description: Second-level category
+    nullable: true
+  - name: brand
+    type: STRING
+    description: Brand name
+    nullable: true
+  - name: price_usd
+    type: FLOAT64
+    description: Current retail price in USD
+    nullable: false
+  - name: cost_usd
+    type: FLOAT64
+    description: Unit cost (for margin calculations)
+    nullable: true
+  - name: is_active
+    type: BOOL
+    description: Whether product is currently listed
+    nullable: false
+  - name: created_at
+    type: TIMESTAMP
+    description: Product listing creation date
+    nullable: false
+  - name: attributes
+    type: ARRAY<STRUCT<key STRING, value STRING>>
+    description: Flexible key-value product attributes
+    nullable: true

@@ -1,0 +1,36 @@
+table: inventory
+dataset: ops
+description: Daily inventory snapshot per SKU per warehouse
+columns:
+  - name: snapshot_date
+    type: DATE
+    description: Date of snapshot
+    nullable: false
+  - name: sku
+    type: STRING
+    description: Stock-keeping unit code
+    nullable: false
+  - name: warehouse_id
+    type: STRING
+    description: Warehouse location identifier
+    nullable: false
+  - name: quantity_on_hand
+    type: INT64
+    description: Units physically available
+    nullable: false
+  - name: quantity_reserved
+    type: INT64
+    description: Units reserved for pending orders
+    nullable: false
+  - name: quantity_incoming
+    type: INT64
+    description: Units in transit from suppliers
+    nullable: false
+  - name: reorder_point
+    type: INT64
+    description: Quantity threshold that triggers reorder
+    nullable: true
+  - name: unit_cost_usd
+    type: FLOAT64
+    description: Unit cost at snapshot time
+    nullable: true

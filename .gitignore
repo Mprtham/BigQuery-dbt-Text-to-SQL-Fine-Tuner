@@ -1,0 +1,38 @@
+# Environment
+.env
+*.env.local
+
+# Model weights (large binary files)
+models/
+*.bin
+*.safetensors
+*.pt
+*.ckpt
+
+# Generated datasets (regenerate from scripts)
+data/dataset/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+notebooks/.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp

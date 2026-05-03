@@ -1,0 +1,32 @@
+# Core ML
+torch>=2.1.0
+transformers>=4.40.0
+datasets>=2.18.0
+peft>=0.10.0
+trl>=0.8.6
+accelerate>=0.28.0
+unsloth[colab-new]>=2024.4
+
+# Data generation
+groq>=0.5.0
+pyyaml>=6.0.1
+
+# SQL validation & eval
+sqlglot>=23.0.0
+deepeval>=0.21.0
+
+# Inference API
+fastapi>=0.110.0
+uvicorn[standard]>=0.27.0
+pydantic>=2.6.0
+requests>=2.31.0
+
+# Playground UI
+streamlit>=1.33.0
+
+# HuggingFace publishing
+huggingface_hub>=0.22.0
+
+# Dev
+python-dotenv>=1.0.0
+ipykernel>=6.29.0

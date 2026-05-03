@@ -1,0 +1,46 @@
+table: events
+dataset: analytics
+description: Raw user behavioural event stream from web and app
+columns:
+  - name: event_id
+    type: STRING
+    description: Unique event identifier
+    nullable: false
+  - name: user_id
+    type: STRING
+    description: Authenticated user ID (null for anonymous)
+    nullable: true
+  - name: anonymous_id
+    type: STRING
+    description: Client-side anonymous ID
+    nullable: false
+  - name: event_type
+    type: STRING
+    description: Event name
+    values: [page_view, click, add_to_cart, checkout_start, purchase, refund]
+    nullable: false
+  - name: occurred_at
+    type: TIMESTAMP
+    description: Event timestamp (UTC)
+    nullable: false
+  - name: session_id
+    type: STRING
+    description: Session grouping key
+    nullable: true
+  - name: platform
+    type: STRING
+    description: Client platform
+    values: [web, ios, android]
+    nullable: false
+  - name: properties
+    type: JSON
+    description: Freeform event properties payload
+    nullable: true
+  - name: page_url
+    type: STRING
+    description: URL at time of event (web only)
+    nullable: true
+  - name: country
+    type: STRING
+    description: GeoIP country ISO-2
+    nullable: true

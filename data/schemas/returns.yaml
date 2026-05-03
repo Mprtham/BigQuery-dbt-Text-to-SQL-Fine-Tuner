@@ -1,0 +1,42 @@
+table: returns
+dataset: ecommerce
+description: Order return and refund requests
+columns:
+  - name: return_id
+    type: STRING
+    description: Unique return request identifier
+    nullable: false
+  - name: order_id
+    type: STRING
+    description: Foreign key to orders table
+    nullable: false
+  - name: customer_id
+    type: STRING
+    description: Foreign key to customers table
+    nullable: false
+  - name: requested_at
+    type: TIMESTAMP
+    description: Return request creation timestamp
+    nullable: false
+  - name: resolved_at
+    type: TIMESTAMP
+    description: Return resolution timestamp (null if pending)
+    nullable: true
+  - name: reason
+    type: STRING
+    description: Return reason code
+    values: [damaged, wrong_item, changed_mind, quality_issue, late_delivery, other]
+    nullable: false
+  - name: status
+    type: STRING
+    description: Return processing status
+    values: [pending, approved, rejected, refunded, exchanged]
+    nullable: false
+  - name: refund_amount_usd
+    type: FLOAT64
+    description: Refund amount issued (null if not yet refunded)
+    nullable: true
+  - name: items
+    type: ARRAY<STRUCT<sku STRING, qty INT64>>
+    description: Returned items array
+    nullable: false

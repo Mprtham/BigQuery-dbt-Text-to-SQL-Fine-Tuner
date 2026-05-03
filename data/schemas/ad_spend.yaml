@@ -1,0 +1,45 @@
+table: ad_spend
+dataset: marketing
+description: Daily ad spend aggregates by channel and campaign
+columns:
+  - name: spend_date
+    type: DATE
+    description: Date of spend
+    nullable: false
+  - name: channel
+    type: STRING
+    description: Advertising channel
+    values: [google_ads, meta, tiktok, display, youtube, email]
+    nullable: false
+  - name: campaign_id
+    type: STRING
+    description: Platform-specific campaign identifier
+    nullable: false
+  - name: campaign_name
+    type: STRING
+    description: Human-readable campaign name
+    nullable: true
+  - name: impressions
+    type: INT64
+    description: Total ad impressions
+    nullable: false
+  - name: clicks
+    type: INT64
+    description: Total ad clicks
+    nullable: false
+  - name: spend_usd
+    type: FLOAT64
+    description: Total spend in USD
+    nullable: false
+  - name: conversions
+    type: INT64
+    description: Attributed conversions
+    nullable: true
+  - name: revenue_usd
+    type: FLOAT64
+    description: Attributed revenue in USD
+    nullable: true
+  - name: country
+    type: STRING
+    description: Target country ISO-2
+    nullable: true
